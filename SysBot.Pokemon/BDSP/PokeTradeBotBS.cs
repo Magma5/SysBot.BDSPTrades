@@ -335,7 +335,11 @@ namespace SysBot.Pokemon
                 var offset = await SwitchConnection.PointerAll(Offsets.LinkTradePartnerPokemonPointer, token).ConfigureAwait(false);
                 var oldEC = await SwitchConnection.ReadBytesAbsoluteAsync(offset, 4, token).ConfigureAwait(false);
                 if (offered is null)
+                {
+                    Log("Offered pokemon is null LMAO");
                     return PokeTradeResult.TrainerTooSlow;
+                }
+                
 
                 if (poke.Type == PokeTradeType.Random)
                 {
@@ -435,6 +439,8 @@ namespace SysBot.Pokemon
         {
             var oldPKData = await SwitchConnection.PointerPeek(344, Offsets.BoxStartPokemonPointer, token).ConfigureAwait(false);
 
+            Log("Confirm and start trading");
+
             await Click(A, 3_000, token).ConfigureAwait(false);
             for (int i = 0; i < 10; i++)
             {
@@ -458,9 +464,17 @@ namespace SysBot.Pokemon
 
                 // We've somehow failed out of the Union Room -- can happen with connection error.
                 if (!await IsTrue(Offsets.UnionWorkIsGamingPointer, token).ConfigureAwait(false))
+                {
+                    Log("Failed out of the union room - can happen with connection error.");
                     return PokeTradeResult.TrainerTooSlow;
+                }
+                
                 if (tradeCounter >= Hub.Config.Trade.TradeAnimationMaxDelaySeconds)
+                {
+                    Log("TradeAnimationMaxDelaySeconds exceeded");
                     break;
+                }
+                    
             }
 
             // If we don't detect a B1S1 change, the trade didn't go through in that time.
@@ -530,12 +544,6 @@ namespace SysBot.Pokemon
             while (!await IsTrue(Offsets.UnionWorkIsGamingPointer, token).ConfigureAwait(false))
             {
                 await Click(A, 0_300, token).ConfigureAwait(false);
-
-                if (await GetUnitySceneStream(token).ConfigureAwait(false) == UnitySceneStream.LocalUnionRoom)
-                {
-                    await Task.Delay(1_000, token).ConfigureAwait(false);
-                    await SetPosition(GetUnionRoomCenter(currentScene), token).ConfigureAwait(false);
-                }
 
                 if (--tries < 1)
                     return false;
